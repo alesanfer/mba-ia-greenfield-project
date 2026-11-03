@@ -45,6 +45,7 @@ _Subprojects in scope:_
 **Recommendation:** **Option A (BullMQ + Redis)** — é o único caminho com integração oficial NestJS 11 cobrindo retry/backoff/dedup nativamente, e o Redis materializa o container `Message Queue` do diagrama sem a carga operacional de topologia AMQP que um único tipo de job não justifica.
 
 **Decision:** A (BullMQ + Redis)
+**Libraries:** @nestjs/bullmq, bullmq
 
 ---
 
@@ -133,6 +134,7 @@ _Subprojects in scope:_
 **Recommendation:** **Option A** — o SDK v3 é o mesmo de produção e a separação `S3_ENDPOINT`/`S3_PUBLIC_ENDPOINT` resolve o problema de host interno vs. navegador sem violar a regra de rede Docker.
 
 **Decision:** A (AWS SDK v3 com dois endpoints)
+**Libraries:** @aws-sdk/client-s3, @aws-sdk/s3-request-presigner
 
 ---
 
@@ -190,6 +192,8 @@ _Subprojects in scope:_
 **Recommendation:** **Option A** — é a única opção que tira a API do caminho dos dados e entrega retomada nativa; sugestão de parâmetros para `/plan-build`: parte fixa de 100 MiB (≤ 103 partes para 10 GiB) e URLs de parte com expiração de 1h, reassináveis.
 
 **Decision:** A (S3 Multipart Upload com URLs pré-assinadas por parte)
+**Revisions:**
+- 2026-11-03 — Fase 03 inclui endpoint de cancelamento do upload: executa `AbortMultipartUpload` no storage e remove o registro do vídeo em `draft`; limpeza automática de rascunhos abandonados (cliente nunca chama `complete`) fica como tarefa futura documentada. Rationale: resolve AMB-4 (validation phase-03-videos) — casos de borda de upload cancelado/abandonado.
 
 ---
 
@@ -335,6 +339,8 @@ _Subprojects in scope:_
 **Recommendation:** **Option A** — mantém rascunhos privados até a Fase 04 definir visibilidade, sem nada a desfazer depois (só a adição de um caminho público).
 
 **Decision:** A (Somente o dono do canal, somente com status ready)
+**Revisions:**
+- 2026-11-03 — Fase 03 expõe apenas leitura individual de um vídeo do próprio dono (status, duração, metadados, `public_id` e thumbnail via URL pré-assinada), com a mesma regra de dono desta TD (sem a restrição de `ready`, para acompanhar o processamento); listagem de vídeos fica para a Fase 04. Rationale: resolve AMB-5 (validation phase-03-videos) — fronteira com o painel da Fase 04.
 
 ---
 
@@ -361,6 +367,8 @@ _Subprojects in scope:_
 **Recommendation:** **Option B** — atende o ciclo pedido sem antecipar o modelo de publicação da Fase 04; transições permitidas: `draft→processing` (API, no `complete`), `processing→ready|failed` (worker).
 
 **Decision:** B (Enum de processamento; publicação ortogonal)
+**Revisions:**
+- 2026-11-03 — No pré-cadastro (`draft`) o cliente informa nome do arquivo, MIME e tamanho; título é opcional e, quando ausente, deriva do nome do arquivo sem extensão (edição de título é da Fase 04). Rationale: resolve AMB-1 (validation phase-03-videos) — dados exigidos ao iniciar o upload.
 
 ---
 
@@ -421,6 +429,9 @@ _Subprojects in scope:_
 **Recommendation:** **Option A** — o uso se limita a dois comandos bem definidos; um wrapper próprio de poucas linhas sobre o binário da distro evita dependência deprecada ou binários baixados no install.
 
 **Decision:** A (Binários do sistema via child_process)
+**Revisions:**
+- 2026-11-03 — Metadados persistidos: colunas tipadas para duração, largura, altura, codec de vídeo, codec de áudio e tamanho real do arquivo, mais coluna `jsonb` com o restante da saída do ffprobe. Rationale: resolve AMB-2 (validation phase-03-videos) — conjunto e formato dos metadados.
+- 2026-11-03 — Thumbnail: JPEG extraído do frame em 10% da duração (piso no segundo 0 para vídeos muito curtos), redimensionado para largura máxima de 1280px mantendo a proporção. Rationale: resolve AMB-3 (validation phase-03-videos) — frame, formato e dimensões do thumbnail.
 
 ---
 

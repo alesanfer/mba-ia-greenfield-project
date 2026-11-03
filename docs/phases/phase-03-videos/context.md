@@ -3,11 +3,12 @@ kind: phase
 name: phase-03-videos
 sources_mtime:
   docs/project-plan.md: "2026-11-03T19:25:25-03:00"
-  docs/decisions/technical-decisions-phase-03-videos.md: "2026-11-03T19:51:01-03:00"
+  docs/decisions/technical-decisions-phase-03-videos.md: "2026-11-03T20:15:55-03:00"
   docs/decisions/technical-decisions-openapi-docs-nestjs.md: "2026-11-03T19:25:25-03:00"
   docs/phases/phase-01-configuracao-base/context.md: "2026-11-03T19:25:25-03:00"
   docs/phases/phase-02-auth/context.md: "2026-11-03T19:25:25-03:00"
   docs/phases/phase-02-auth-frontend/context.md: "2026-11-03T19:25:25-03:00"
+  docs/phases/phase-03-videos/library-refs.md: "2026-11-03T20:19:43-03:00"
   .claude/skills/testing-guide-nestjs-project/SKILL.md: "2026-11-03T19:25:25-03:00"
 ---
 
@@ -52,20 +53,24 @@ Upload de arquivos grandes sem travar o sistema, processamento automático do v�
 
 | Ref | Source | Scope | Topic | Status | Decision | Libraries | Capability |
 |-----|--------|-------|-------|--------|----------|-----------|------------|
-| phase-03-videos/TD-01 | phase | Backend | Tecnologia de fila (message queue) | decided | A (BullMQ + Redis) | — | Serviço de processamento em segundo plano (filas) |
+| phase-03-videos/TD-01 | phase | Backend | Tecnologia de fila (message queue) | decided | A (BullMQ + Redis) | @nestjs/bullmq, bullmq | Serviço de processamento em segundo plano (filas) |
 | phase-03-videos/TD-02 | phase | Backend | Modelo de execução do worker de vídeo | decided | A (Mesmo codebase, entrypoint e container próprios) | — | Transversal — covers: Serviço de processamento em segundo plano (filas); Processamento automático do vídeo após upload (extração de duração e metadados); Geração automática de thumbnail a partir de um frame do vídeo |
 | phase-03-videos/TD-03 | phase | Backend | Imagem do object storage S3-compatível no ambiente local | decided | A (MinIO Chainguard fixado por digest) | — | Serviço de armazenamento de arquivos (vídeos e thumbnails) |
-| phase-03-videos/TD-04 | phase | Backend | Cliente S3 e endpoints para URLs pré-assinadas | decided | A (AWS SDK v3 com dois endpoints) | — | Serviço de armazenamento de arquivos (vídeos e thumbnails) |
+| phase-03-videos/TD-04 | phase | Backend | Cliente S3 e endpoints para URLs pré-assinadas | decided | A (AWS SDK v3 com dois endpoints) | @aws-sdk/client-s3, @aws-sdk/s3-request-presigner | Serviço de armazenamento de arquivos (vídeos e thumbnails) |
 | phase-03-videos/TD-05 | phase | Backend | Organização de buckets e chaves no storage | decided | A (Bucket único privado, prefixo por vídeo) | — | Serviço de armazenamento de arquivos (vídeos e thumbnails) |
 | phase-03-videos/TD-06 | phase | Cross-layer | Protocolo de upload de até 10GB | decided | A (S3 Multipart Upload com URLs pré-assinadas por parte) | — | Upload de vídeos com suporte a arquivos de até 10GB sem impacto na performance |
+|     └─ Last revision: 2026-11-03 — Fase 03 inclui endpoint de cancelamento do upload: executa `AbortMultipartUpload… | | | | | | | |
 | phase-03-videos/TD-07 | phase | Cross-layer | Gatilho do processamento após o upload | decided | A (Conclusão explícita via API) | — | Processamento automático do vídeo após upload (extração de duração e metadados) |
 | phase-03-videos/TD-08 | phase | Backend | Limites e formatos de vídeo aceitos | decided | A (Allowlist mp4/webm, sem transcodificação) | — | Upload de vídeos com suporte a arquivos de até 10GB sem impacto na performance |
 | phase-03-videos/TD-09 | phase | Cross-layer | Estratégia de URL única por vídeo | decided | B (ID público base62 de 11 caracteres com índice único) | — | URL única por vídeo, sem conflito com outros vídeos |
 | phase-03-videos/TD-10 | phase | Cross-layer | Entrega de streaming e download | decided | A (URL pré-assinada de GET retornada em JSON) | — | Transversal — covers: Reprodução via streaming (sem necessidade de download completo); Download do vídeo pelo usuário |
 | phase-03-videos/TD-11 | phase | Cross-layer | Política de acesso a stream/download nesta fase | decided | A (Somente o dono do canal, somente com status ready) | — | Transversal — covers: Reprodução via streaming (sem necessidade de download completo); Download do vídeo pelo usuário |
+|     └─ Last revision: 2026-11-03 — Fase 03 expõe apenas leitura individual de um vídeo do próprio dono (status, du… | | | | | | | |
 | phase-03-videos/TD-12 | phase | Backend | Modelo de status do vídeo | decided | B (Enum de processamento; publicação ortogonal) | — | Transversal — covers: Pré-cadastro automático do vídeo como rascunho ao iniciar o upload; Processamento automático do vídeo após upload (extração de duração e metadados) |
+|     └─ Last revision: 2026-11-03 — No pré-cadastro (`draft`) o cliente informa nome do arquivo, MIME e tamanho; tít… | | | | | | | |
 | phase-03-videos/TD-13 | phase | Backend | Política de falha e retentativa no processamento | decided | A (Retentativas exponenciais + UnrecoverableError) | — | Processamento automático do vídeo após upload (extração de duração e metadados) |
 | phase-03-videos/TD-14 | phase | Backend | Integração com FFmpeg/ffprobe | decided | A (Binários do sistema via child_process) | — | Transversal — covers: Processamento automático do vídeo após upload (extração de duração e metadados); Geração automática de thumbnail a partir de um frame do vídeo |
+|     └─ Last revision: 2026-11-03 — Thumbnail: JPEG extraído do frame em 10% da duração (piso no segundo 0 para víde… | | | | | | | |
 | phase-03-videos/TD-15 | phase | Backend | Acesso do worker ao arquivo de origem | decided | A (FFmpeg lê a URL pré-assinada via HTTP Range) | — | Transversal — covers: Processamento automático do vídeo após upload (extração de duração e metadados); Geração automática de thumbnail a partir de um frame do vídeo |
 | phase-03-videos/TD-16 | phase | Repo-wide | Estratégia de testes com fila, storage e worker reais | decided | A (Compose + recursos de teste isolados + processor in-process) | — | Transversal — covers: Serviço de armazenamento de arquivos (vídeos e thumbnails); Serviço de processamento em segundo plano (filas); Processamento automático do vídeo após upload (extração de duração e metadados); Geração automática de thumbnail a partir de um frame do vídeo |
 
@@ -92,7 +97,7 @@ _Source files:_
 ### phase-03-videos/TD-01
 
 **Recommendation:** é o único caminho com integração oficial NestJS 11 cobrindo retry/backoff/dedup nativamente, e o Redis materializa o container `Message Queue` do diagrama sem a carga operacional de topologia AMQP que um único tipo de job não justifica.
-**Libraries:** —
+**Libraries:** @nestjs/bullmq, bullmq
 
 ### phase-03-videos/TD-02
 
@@ -107,7 +112,7 @@ _Source files:_
 ### phase-03-videos/TD-04
 
 **Recommendation:** o SDK v3 é o mesmo de produção e a separação `S3_ENDPOINT`/`S3_PUBLIC_ENDPOINT` resolve o problema de host interno vs. navegador sem violar a regra de rede Docker.
-**Libraries:** —
+**Libraries:** @aws-sdk/client-s3, @aws-sdk/s3-request-presigner
 
 ### phase-03-videos/TD-05
 
@@ -118,6 +123,9 @@ _Source files:_
 
 **Recommendation:** é a única opção que tira a API do caminho dos dados e entrega retomada nativa; sugestão de parâmetros para `/plan-build`: parte fixa de 100 MiB (≤ 103 partes para 10 GiB) e URLs de parte com expiração de 1h, reassináveis.
 **Libraries:** —
+
+**Revisions:**
+- 2026-11-03 — Fase 03 inclui endpoint de cancelamento do upload: executa `AbortMultipartUpload` no storage e remove o registro do vídeo em `draft`; limpeza automática de rascunhos abandonados (cliente nunca chama `complete`) fica como tarefa futura documentada. Rationale: resolve AMB-4 (validation phase-03-videos) — casos de borda de upload cancelado/abandonado.
 
 ### phase-03-videos/TD-07
 
@@ -144,10 +152,16 @@ _Source files:_
 **Recommendation:** mantém rascunhos privados até a Fase 04 definir visibilidade, sem nada a desfazer depois (só a adição de um caminho público).
 **Libraries:** —
 
+**Revisions:**
+- 2026-11-03 — Fase 03 expõe apenas leitura individual de um vídeo do próprio dono (status, duração, metadados, `public_id` e thumbnail via URL pré-assinada), com a mesma regra de dono desta TD (sem a restrição de `ready`, para acompanhar o processamento); listagem de vídeos fica para a Fase 04. Rationale: resolve AMB-5 (validation phase-03-videos) — fronteira com o painel da Fase 04.
+
 ### phase-03-videos/TD-12
 
 **Recommendation:** atende o ciclo pedido sem antecipar o modelo de publicação da Fase 04; transições permitidas: `draft→processing` (API, no `complete`), `processing→ready|failed` (worker).
 **Libraries:** —
+
+**Revisions:**
+- 2026-11-03 — No pré-cadastro (`draft`) o cliente informa nome do arquivo, MIME e tamanho; título é opcional e, quando ausente, deriva do nome do arquivo sem extensão (edição de título é da Fase 04). Rationale: resolve AMB-1 (validation phase-03-videos) — dados exigidos ao iniciar o upload.
 
 ### phase-03-videos/TD-13
 
@@ -158,6 +172,10 @@ _Source files:_
 
 **Recommendation:** o uso se limita a dois comandos bem definidos; um wrapper próprio de poucas linhas sobre o binário da distro evita dependência deprecada ou binários baixados no install.
 **Libraries:** —
+
+**Revisions:**
+- 2026-11-03 — Metadados persistidos: colunas tipadas para duração, largura, altura, codec de vídeo, codec de áudio e tamanho real do arquivo, mais coluna `jsonb` com o restante da saída do ffprobe. Rationale: resolve AMB-2 (validation phase-03-videos) — conjunto e formato dos metadados.
+- 2026-11-03 — Thumbnail: JPEG extraído do frame em 10% da duração (piso no segundo 0 para vídeos muito curtos), redimensionado para largura máxima de 1280px mantendo a proporção. Rationale: resolve AMB-3 (validation phase-03-videos) — frame, formato e dimensões do thumbnail.
 
 ### phase-03-videos/TD-15
 
