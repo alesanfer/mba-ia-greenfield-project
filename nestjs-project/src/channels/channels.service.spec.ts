@@ -1,8 +1,15 @@
+import type { DataSource, EntityManager } from 'typeorm';
 import { QueryFailedError } from 'typeorm';
 import { ChannelsService } from './channels.service';
 import { Channel } from './entities/channel.entity';
 
-function makeManager(overrides: Record<string, jest.Mock> = {}): any {
+interface MockManager {
+  findOne: jest.Mock;
+  create: jest.Mock;
+  save: jest.Mock;
+}
+
+function makeManager(overrides: Partial<MockManager> = {}): MockManager {
   return {
     findOne: jest.fn(),
     create: jest.fn(),
@@ -23,17 +30,20 @@ function makeChannel(nickname: string): Channel {
   return c;
 }
 
+/** TypeORM copies the pg driver fields (code, detail) onto the error. */
 function makeUniqueError(): QueryFailedError {
-  const err = new QueryFailedError('INSERT', [], new Error()) as any;
-  err.code = '23505';
-  err.detail = 'Key (nickname)=(abc) already exists.';
-  return err;
+  return Object.assign(new QueryFailedError('INSERT', [], new Error()), {
+    code: '23505',
+    detail: 'Key (nickname)=(abc) already exists.',
+  });
 }
 
-function makeDataSource(manager: any): any {
+function makeDataSource(manager: MockManager): DataSource {
   return {
-    transaction: jest.fn((cb: (manager: any) => Promise<any>) => cb(manager)),
-  };
+    transaction: jest.fn((cb: (manager: EntityManager) => Promise<unknown>) =>
+      cb(manager as unknown as EntityManager),
+    ),
+  } as unknown as DataSource;
 }
 
 describe('ChannelsService', () => {
