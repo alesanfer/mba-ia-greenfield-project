@@ -48,3 +48,49 @@ export class TokenReuseDetectedException extends DomainException {
     );
   }
 }
+
+export class VideoNotFoundException extends DomainException {
+  constructor() {
+    super('VIDEO_NOT_FOUND', 404, 'Video not found');
+  }
+}
+
+export class InvalidVideoStateException extends DomainException {
+  constructor() {
+    super(
+      'INVALID_VIDEO_STATE',
+      409,
+      'Operation not allowed for the current video status',
+    );
+  }
+}
+
+export class InvalidUploadPartsException extends DomainException {
+  constructor() {
+    super(
+      'INVALID_UPLOAD_PARTS',
+      400,
+      'Uploaded parts are invalid or incomplete',
+    );
+  }
+}
+
+export class UploadSizeMismatchException extends DomainException {
+  constructor() {
+    super(
+      'UPLOAD_SIZE_MISMATCH',
+      422,
+      'Uploaded file size does not match the declared size',
+    );
+  }
+}
+
+export class QueueUnavailableException extends DomainException {
+  constructor() {
+    super(
+      'QUEUE_UNAVAILABLE',
+      503,
+      'Video processing could not be scheduled, try again',
+    );
+  }
+}

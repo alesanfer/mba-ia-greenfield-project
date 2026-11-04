@@ -13,6 +13,9 @@ docker compose ps   # all services must show status "running"
 Then verify each infrastructure service is actually ready to accept connections — not just running:
 
 - **PostgreSQL:** `docker compose exec db pg_isready -U streamtube` — expect `accepting connections`
+- **Redis:** `docker compose exec redis redis-cli ping` — expect `PONG`
+- **Storage (MinIO):** `docker compose ps storage` — expect `healthy` (healthcheck `mc ready local`); `docker compose ps -a storage-init` — expect `Exited (0)` (buckets provisioned)
+- **Video worker:** `docker compose logs video-worker` — expect `Video worker started`
 
 Only start the NestJS dev server (`npm run start:dev`) when the user **explicitly** asks to run the application — never as part of "start the environment".
 
@@ -33,7 +36,12 @@ docker compose exec nestjs-api npm run start:dev
 
 Services:
 - `nestjs-api` — NestJS API, port `3000`
+- `video-worker` — video processing worker (same image and code as the API, `npm run start:worker`); consumes the `video-processing` queue and runs ffprobe/ffmpeg
 - `db` — PostgreSQL 17, port `5432`, database `streamtube`, user/password `streamtube`
+- `mailpit` — SMTP capture, ports `1025` (SMTP) and `8025` (web UI)
+- `redis` — Redis 8, port `6379`; BullMQ queue backend
+- `storage` — MinIO (S3-compatible), ports `9000` (API) and `9001` (console); credentials from `S3_ACCESS_KEY`/`S3_SECRET_KEY`
+- `storage-init` — one-shot job that creates the private buckets `${S3_BUCKET}` and `streamtube-videos-test` (idempotent)
 
 All verification and teardown commands run on the **host machine**:
 
@@ -60,8 +68,11 @@ docker compose down
 
 ```bash
 npm run start:dev                        # Dev server with hot-reload
+npm run start:worker                     # Video worker with hot-reload (compiles to dist-worker/; run by the video-worker service)
+npm run openapi:export                   # Regenerate the versioned openapi.json
 npm run build                            # Compile to dist/
 npm run start:prod                       # Run compiled build
+npm run start:worker:prod                # Run the compiled worker (dist/worker.js)
 
 npm test                                 # Unit tests
 npm run test:watch                       # Unit tests in watch mode
@@ -92,6 +103,8 @@ docker compose exec nestjs-api npm run test:e2e   # already configured
 ```
 
 Parallel execution causes FK violations, deadlocks, and cross-suite contamination because suites truncate or seed shared tables concurrently.
+
+Tests never touch the development bucket or queues: `src/test/setup-test-env.ts` (Jest `setupFiles`, loaded before `dotenv/config`) forces `S3_BUCKET=streamtube-videos-test`, `S3_PUBLIC_ENDPOINT=http://storage:9000` and `QUEUE_PREFIX=bull-test`. The storage and queue test helpers (`src/test/storage-test.helper.ts`, `src/test/queue-test.helper.ts`) refuse to clear anything outside those names. Media fixtures are generated on demand with ffmpeg by `src/test/media-fixtures.helper.ts`.
 
 During active development, run only the tests related to the file being changed (`npm test -- path/to/file.spec.ts`). Before declaring a task done, run the full suite — see the global `CLAUDE.md` → "Definition of Done (Technical)".
 
@@ -148,6 +161,23 @@ NestJS with standard module structure. Source lives in `src/`, compiled output i
 
 - Each domain feature gets its own module (e.g., `UsersModule`, `VideosModule`) registered in `AppModule`
 - Controllers handle HTTP routing; Services hold business logic; both are scoped to their module
+
+### Two entrypoints
+
+- `src/main.ts` → `AppModule` — HTTP API.
+- `src/worker.ts` → `WorkerModule` — standalone application context (no HTTP) that registers `VideoProcessor` on the `video-processing` queue.
+
+Rules:
+
+- **The API never receives video bytes.** Uploads go from the client straight to the storage through presigned `UploadPart` URLs; playback and download use presigned `GetObject` URLs. The API only controls the multipart upload and signs URLs.
+- **The worker is never imported by `AppModule`.** `VideoProcessor` is registered only in `WorkerModule`; `VideosModule` holds just the producer (`VideoProcessingQueue`). `WorkerModule` never imports `VideosModule`.
+
+### Video modules
+
+- `StorageModule` (`src/storage/`) — two S3 clients: internal (`S3_ENDPOINT`, I/O) and public (`S3_PUBLIC_ENDPOINT`, signing only, so URLs carry a host the client can reach).
+- `QueueModule` (`src/queue/`) — BullMQ root connection (`REDIS_HOST`/`REDIS_PORT`, `QUEUE_PREFIX`).
+- `MediaModule` (`src/media/`) — ffprobe/ffmpeg wrappers (`MediaProbeService`, `ThumbnailService`).
+- `VideosModule` (`src/videos/`) — `Video` entity, `VideosService`, `VideosController` and the `video-processing` producer (`src/videos/processing/`).
 
 ## Code Conventions
 
