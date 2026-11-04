@@ -26,9 +26,9 @@ Entregar o upload de vídeos de até 10GB sem impacto na performance (direto ao 
 **Technical actions:**
 
 1. Instalar no container `nestjs-api`: `@nestjs/bullmq bullmq ioredis @aws-sdk/client-s3 @aws-sdk/s3-request-presigner` (per `phase-03-videos/TD-01`, `phase-03-videos/TD-04`; `ioredis` explícito porque é peer opcional no `bullmq@6`, per `library-refs.md`)
-2. Criar `src/config/storage.config.ts` (`registerAs('storage', …)` com `endpoint`, `publicEndpoint`, `region`, `accessKey`, `secretKey`, `bucket`) e `src/config/queue.config.ts` (`registerAs('queue', …)` com `host`, `port`); adicionar `S3_ENDPOINT`, `S3_PUBLIC_ENDPOINT`, `S3_REGION`, `S3_ACCESS_KEY`, `S3_SECRET_KEY`, `S3_BUCKET`, `REDIS_HOST`, `REDIS_PORT` ao schema Joi em `src/config/env.validation.ts` e ao `.env.example` (hosts internos = nomes de serviço Compose: `storage`, `redis`) (per `phase-03-videos/TD-04`; convenções herdadas de `phase-01-configuracao-base/TD-02`, `phase-01-configuracao-base/TD-03`)
+2. Criar `src/config/storage.config.ts` (`registerAs('storage', …)` com `endpoint`, `publicEndpoint`, `region`, `accessKey`, `secretKey`, `bucket`) e `src/config/queue.config.ts` (`registerAs('queue', …)` com `host`, `port`, `prefix`); adicionar `S3_ENDPOINT`, `S3_PUBLIC_ENDPOINT`, `S3_REGION`, `S3_ACCESS_KEY`, `S3_SECRET_KEY`, `S3_BUCKET`, `REDIS_HOST`, `REDIS_PORT` e `QUEUE_PREFIX` (opcional, default `bull`) ao schema Joi em `src/config/env.validation.ts` e ao `.env.example` (hosts internos = nomes de serviço Compose: `storage`, `redis`) (per `phase-03-videos/TD-04`; convenções herdadas de `phase-01-configuracao-base/TD-02`, `phase-01-configuracao-base/TD-03`)
 3. Adicionar ao `compose.yaml` o serviço `redis` (`redis:8.8`, healthcheck `redis-cli ping`) e o serviço `storage` (`cgr.dev/chainguard/minio` fixado por digest `@sha256:…`, credenciais via env, porta `9000`, volume nomeado, healthcheck) (per `phase-03-videos/TD-01`, `phase-03-videos/TD-03`)
-4. Adicionar ao `compose.yaml` o serviço one-shot `storage-init` (`cgr.dev/chainguard/minio-client` fixado por digest) que cria de forma idempotente o bucket privado `S3_BUCKET` e o bucket de testes `streamtube-videos-test`; `nestjs-api` passa a depender de `redis` (healthy), `storage` (healthy) e `storage-init` (completed) (per `phase-03-videos/TD-05`, `phase-03-videos/TD-16`)
+4. Adicionar ao `compose.yaml` o serviço one-shot `storage-init` (`cgr.dev/chainguard/minio-client` fixado por digest) que cria de forma idempotente o bucket privado `S3_BUCKET` e o bucket de testes `streamtube-videos-test`; `nestjs-api` passa a depender de `redis` (healthy), `storage` (healthy) e `storage-init` (completed); criar `src/test/setup-test-env.ts`, que define `S3_BUCKET=streamtube-videos-test`, `S3_PUBLIC_ENDPOINT=http://storage:9000` (assinatura SigV4 inclui o host, então as URLs precisam ser assinadas já com um host alcançável de dentro do container de testes) e `QUEUE_PREFIX=bull-test`, e registrá-lo em `setupFiles` **antes** de `dotenv/config` no jest do `package.json` e em `test/jest-e2e.json` — o `dotenv` não sobrescreve variáveis já definidas, então unit, integration e E2E (que sobe o `AppModule` inteiro) usam o bucket e a fila de testes (per `phase-03-videos/TD-05`, `phase-03-videos/TD-16`)
 5. Adicionar `ffmpeg` ao `Dockerfile.dev` (`apt install -y ffmpeg`) — a mesma imagem serve a API (testes do worker in-process) e o futuro container `video-worker` (per `phase-03-videos/TD-14`, `phase-03-videos/TD-16`)
 
 **Tests:**
@@ -36,7 +36,7 @@ Entregar o upload de vídeos de até 10GB sem impacto na performance (direto ao 
 | Artifact | Layer | Test file |
 |----------|-------|-----------|
 | `envValidationSchema` (chaves S3/Redis) | Unit: falha com chave ausente ou inválida | `src/config/env.validation.integration-spec.ts` |
-| `storageConfig` / `queueConfig` | Unit: factories leem as variáveis e aplicam tipos (porta numérica) | `src/config/storage.config.spec.ts` |
+| `storageConfig` / `queueConfig` | Unit: factories leem as variáveis e aplicam tipos (porta numérica); `prefix` default `bull` quando `QUEUE_PREFIX` ausente | `src/config/storage.config.spec.ts` |
 
 **Dependencies:** none
 
@@ -48,6 +48,7 @@ Entregar o upload de vídeos de até 10GB sem impacto na performance (direto ao 
 - Reexecutar `storage-init` com os buckets já criados termina com exit code 0 (idempotente)
 - A aplicação não inicia quando qualquer uma das chaves `S3_*` ou `REDIS_*` está ausente do ambiente
 - `docker compose exec nestjs-api ffprobe -version` e `ffmpeg -version` executam com sucesso
+- Em qualquer processo Jest (unit, integration ou E2E), `process.env.S3_BUCKET = 'streamtube-videos-test'`, `S3_PUBLIC_ENDPOINT = 'http://storage:9000'` e `QUEUE_PREFIX = 'bull-test'`, mesmo com outros valores no `.env`
 
 ---
 
@@ -124,11 +125,11 @@ Entregar o upload de vídeos de até 10GB sem impacto na performance (direto ao 
 
 **Technical actions:**
 
-1. Criar `src/queue/queue.module.ts` — `BullModule.forRootAsync({ imports: [ConfigModule], inject: [queueConfig.KEY], useFactory })` lendo `REDIS_HOST`/`REDIS_PORT`; importado pelo `AppModule` e, depois, pelo `WorkerModule` (per `phase-03-videos/TD-01`; padrão `forRootAsync` + `ConfigType` herdado de `phase-01-configuracao-base/TD-03`)
+1. Criar `src/queue/queue.module.ts` — `BullModule.forRootAsync({ imports: [ConfigModule], inject: [queueConfig.KEY], useFactory })` lendo `REDIS_HOST`/`REDIS_PORT` e aplicando `prefix: queue.prefix` (isola as filas de teste, per `phase-03-videos/TD-16`); importado pelo `AppModule` e, depois, pelo `WorkerModule` (per `phase-03-videos/TD-01`; padrão `forRootAsync` + `ConfigType` herdado de `phase-01-configuracao-base/TD-03`)
 2. Criar `src/videos/processing/video-processing.constants.ts` — `VIDEO_PROCESSING_QUEUE = 'video-processing'`, `PROCESS_VIDEO_JOB = 'process-video'`, tipo `ProcessVideoJobData = { videoId: string }` e `PROCESS_VIDEO_JOB_OPTIONS` (`attempts: 3`, `backoff: { type: 'exponential', delay: 5000 }`) (per `phase-03-videos/TD-13`, `### Events/Messages`)
 3. Criar `src/videos/processing/video-processing.queue.ts` — `VideoProcessingQueue` com `@InjectQueue(VIDEO_PROCESSING_QUEUE)` e `enqueue(videoId)` → `queue.add(PROCESS_VIDEO_JOB, { videoId }, { ...PROCESS_VIDEO_JOB_OPTIONS, jobId: videoId })` (per `phase-03-videos/TD-07`)
 4. Criar `src/videos/processing/video-processing.module.ts` — `BullModule.registerQueue({ name: VIDEO_PROCESSING_QUEUE })` + provider/export `VideoProcessingQueue` (sem `@Processor` — consumer fica só no `WorkerModule`, per `phase-03-videos/TD-02`)
-5. Criar helper de teste `src/test/queue-test.helper.ts` — registra a fila com `prefix: 'bull-test'` e esvazia a fila (`obliterate`) entre testes (per `phase-03-videos/TD-16`)
+5. Criar helper de teste `src/test/queue-test.helper.ts` — registra a fila com o prefixo de teste (`QUEUE_PREFIX=bull-test`, definido por `src/test/setup-test-env.ts`) e esvazia a fila (`obliterate`) entre testes (per `phase-03-videos/TD-16`)
 
 **Tests:**
 
