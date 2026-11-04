@@ -1,7 +1,7 @@
 ---
 libs:
   "@nestjs/bullmq":
-    version: "^12.0.0"
+    version: "^11.0.5"
     context7_id: "/nestjs/docs.nestjs.com"
     fetched_at: "2026-11-03T20:16:35-03:00"
   bullmq:
@@ -29,7 +29,9 @@ Docs destiladas das bibliotecas decididas nesta fase. As versões foram conferid
 ## @nestjs/bullmq
 
 **Source:** `/nestjs/docs.nestjs.com`, branch `11.0.0`, trust 9.7. Corresponde a `phase-03-videos/TD-01` Decision A e `TD-02` Decision A.
-**Installed target:** `@nestjs/bullmq@^12.0.0` — peer `@nestjs/common` / `@nestjs/core` `^10 || ^11 || ^12`, `bullmq ^3 || ^4 || ^5 || ^6` (npm registry). É compatível com o NestJS 11 do projeto.
+**Installed target:** `@nestjs/bullmq@^11.0.5` — peer `@nestjs/common` / `@nestjs/core` `^10 || ^11`, `bullmq ^3 || ^4 || ^5 || ^6` (npm registry). É compatível com o NestJS 11 do projeto.
+
+> **Revisão 2026-11-04 (implement do SI-03.4):** o alvo original era `^12.0.0`, mas a 12.0.0 e a `@nestjs/bull-shared@12` são publicadas como **ESM puro** (`"type": "module"`), e o Jest CommonJS do projeto não consegue importá-las. A `11.0.5` é CommonJS e tem a mesma API usada abaixo. Veja a revisão de `phase-03-videos/TD-01`.
 
 ### Instalação
 

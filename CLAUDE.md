@@ -20,11 +20,32 @@ See `docs/diagrams/software-arch.mermaid` for the full diagram. Key containers:
 
 - **Frontend** (Next.js) → calls API via REST, streams from Object Storage
 - **API** (Nest.js) → business rules, auth, reads/writes DB, uploads to storage, publishes jobs to queue, sends emails
-- **Video Worker** (FFmpeg) → consumes jobs from queue, processes videos, updates DB and storage
+- **Video Worker** (NestJS standalone + FFmpeg, `video-worker` container) → consumes jobs from queue, extracts metadata and thumbnail, updates DB and storage
 - **Database** (PostgreSQL) → users, channels, videos, comments, likes
-- **Object Storage** (S3/MinIO) → video files and thumbnails
-- **Message Queue** (TBD) → video processing job queue
+- **Object Storage** (S3/MinIO) → video files and thumbnails; private bucket, accessed by clients only through presigned URLs
+- **Message Queue** (Redis + BullMQ) → `video-processing` job queue
 - **Email Service** (SMTP) → account confirmation and password recovery
+
+## Videos (Phase 03)
+
+Backend modules in `nestjs-project/src/`:
+
+- `videos/` — `Video` entity, `VideosService`, `VideosController` and the `video-processing` producer (`videos/processing/`)
+- `storage/` — S3 client (MinIO): multipart upload and presigned URLs
+- `media/` — ffprobe/ffmpeg wrappers (metadata and thumbnail)
+- `queue/` — BullMQ connection to Redis
+
+Endpoints (all owner-only, `Authorization: Bearer`; other channels' videos answer `404 VIDEO_NOT_FOUND`):
+
+- `POST /videos` — pre-registers a `draft` and returns presigned URLs for 100 MiB parts
+- `GET /videos/{public_id}/upload` — resumes an upload (URLs only for the missing parts)
+- `DELETE /videos/{public_id}/upload` — cancels the upload and removes the draft
+- `POST /videos/{public_id}/upload/complete` — completes the multipart upload and enqueues processing (`draft → processing`)
+- `GET /videos/{public_id}` — status, metadata and thumbnail URL
+- `GET /videos/{public_id}/stream` — presigned URL (1 h) for progressive playback (`Range`/`206`)
+- `GET /videos/{public_id}/download` — presigned URL (15 min) that downloads with the original file name
+
+Flow: the client PUTs the file parts straight to the storage, so the API never receives video bytes. On completion the API publishes a `process-video` job. The `video-worker` (`src/worker.ts`, `WorkerModule`) probes the file, stores the thumbnail and moves the video to `ready`, or to `failed` with `processing_error`. The worker is never imported by the API's `AppModule`.
 
 ## Docker Networking
 

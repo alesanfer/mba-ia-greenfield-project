@@ -46,6 +46,8 @@ _Subprojects in scope:_
 
 **Decision:** A (BullMQ + Redis)
 **Libraries:** @nestjs/bullmq, bullmq
+**Revisions:**
+- 2026-11-04 — Versão do `@nestjs/bullmq` fixada em `^11.0.5` em vez de `^12.0.0`. A 12.0.0 (e a `@nestjs/bull-shared@12`) é publicada como ESM puro (`"type": "module"`); o Jest do projeto (CommonJS + ts-jest) falha ao importá-la (`SyntaxError: Unexpected token 'export'`). A 11.0.5 é CommonJS, tem a mesma API e aceita `bullmq ^6` e `@nestjs/* ^10||^11`. A 12 só adiciona suporte ao NestJS 12. Rationale: desvio aprovado pelo usuário durante o implement do SI-03.4; reavaliar ao migrar o projeto para NestJS 12.
 
 ---
 
