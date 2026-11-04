@@ -152,7 +152,7 @@ Entregar o upload de vídeos de até 10GB sem impacto na performance (direto ao 
 ### SI-03.5 — Endpoint POST /videos: pré-cadastro do rascunho e início do upload
 
 **Route:** POST /videos
-**Test Specs:** _pending /plan-test-specs_
+**Test Specs:** see `nestjs-project/specs/videos-create.plan.md`
 **Authorization:** Authenticated — o vídeo é criado no canal do usuário autenticado (per `### Authorization Matrix`)
 
 **Description:** Ao iniciar o upload, pré-cadastra o vídeo como `draft`, abre o S3 Multipart Upload e devolve as URLs pré-assinadas de todas as partes, para o cliente enviar o arquivo direto ao storage sem passar pela API.
@@ -191,7 +191,7 @@ Entregar o upload de vídeos de até 10GB sem impacto na performance (direto ao 
 ### SI-03.6 — Endpoints de retomada e cancelamento do upload
 
 **Route:** GET /videos/{public_id}/upload, DELETE /videos/{public_id}/upload
-**Test Specs:** _pending /plan-test-specs_
+**Test Specs:** see `nestjs-project/specs/videos-upload-session.plan.md`
 **Authorization:** Owner — não dono recebe `404 VIDEO_NOT_FOUND`; exige `status = 'draft'` (per `### Authorization Matrix`)
 
 **Description:** Permite retomar um upload interrompido (lista as partes já recebidas e reassina as faltantes) e cancelá-lo (aborta o multipart e remove o rascunho), cobrindo os casos de borda de upload falho e cancelado.
@@ -226,7 +226,7 @@ Entregar o upload de vídeos de até 10GB sem impacto na performance (direto ao 
 ### SI-03.7 — Endpoint POST /videos/{public_id}/upload/complete: conclusão do upload e disparo do processamento
 
 **Route:** POST /videos/{public_id}/upload/complete
-**Test Specs:** _pending /plan-test-specs_
+**Test Specs:** see `nestjs-project/specs/videos-upload-complete.plan.md`
 **Authorization:** Owner — não dono recebe `404 VIDEO_NOT_FOUND`; exige `status = 'draft'` (per `### Authorization Matrix`)
 
 **Description:** Conclui o multipart, confere o tamanho real do objeto e faz a transição `draft → processing` publicando o job `process-video`, de forma idempotente quando o enfileiramento falha.
@@ -329,7 +329,7 @@ Entregar o upload de vídeos de até 10GB sem impacto na performance (direto ao 
 ### SI-03.10 — Endpoint GET /videos/{public_id}: leitura do vídeo pelo dono
 
 **Route:** GET /videos/{public_id}
-**Test Specs:** _pending /plan-test-specs_
+**Test Specs:** see `nestjs-project/specs/videos-get.plan.md`
 **Authorization:** Owner — não dono recebe `404 VIDEO_NOT_FOUND`; qualquer status (per `### Authorization Matrix`)
 
 **Description:** Expõe ao dono o estado do vídeo (status, metadados, `public_id` e thumbnail) para acompanhar o processamento, sem listagem — que fica para a Fase 04.
@@ -363,7 +363,7 @@ Entregar o upload de vídeos de até 10GB sem impacto na performance (direto ao 
 ### SI-03.11 — Endpoints de streaming e download
 
 **Route:** GET /videos/{public_id}/stream, GET /videos/{public_id}/download
-**Test Specs:** _pending /plan-test-specs_
+**Test Specs:** see `nestjs-project/specs/videos-stream-download.plan.md`
 **Authorization:** Owner — não dono recebe `404 VIDEO_NOT_FOUND`; exige `status = 'ready'` (per `### Authorization Matrix`)
 
 **Description:** Entrega ao dono URLs pré-assinadas do arquivo original: uma para reprodução progressiva (o storage atende `Range`/`206`) e outra que força download com o nome original do arquivo.
