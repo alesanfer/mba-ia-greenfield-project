@@ -16,13 +16,13 @@ Conclui o upload multipart de um rascunho. A rota chama `CompleteMultipartUpload
 
 ### 1. Conclusão bem-sucedida
 
-**Setup:** `beforeAll`: `AppModule` com a config global do `main.ts` (`ValidationPipe`, `DomainExceptionFilter`, `ValidationExceptionFilter`), bucket `streamtube-videos-test` e fila com prefixo `bull-test` (`src/test/queue-test.helper.ts`). `beforeEach`: `cleanAllTables(dataSource)`, limpar o bucket de testes, `obliterate` da fila de testes e limpar o storage do throttler. Dono (e outro usuário) confirmados e logados via `registerConfirmAndLogin`. Rascunho criado com `POST /videos` e `size_bytes = 1048576` (1 parte), e a parte enviada por PUT direto na URL pré-assinada, guardando o `ETag`. `afterAll`: `app.close()`.
+**Setup:** `beforeAll`: `AppModule` com a config global do `main.ts` (`ValidationPipe`, `DomainExceptionFilter`, `ValidationExceptionFilter`), bucket `streamtube-videos-test`, `S3_PUBLIC_ENDPOINT=http://storage:9000` e prefixo de fila `bull-test` vindos de `src/test/setup-test-env.ts` (carregado em `setupFiles` antes do `dotenv/config`, per SI-03.1). `beforeEach`: `cleanAllTables(dataSource)`, limpar o bucket de testes, `obliterate` da fila de testes e limpar o storage do throttler. Dono (e outro usuário) confirmados e logados via `registerConfirmAndLogin`. Rascunho criado com `POST /videos` e `size_bytes = 1048576` (1 parte), e a parte enviada por PUT direto na URL pré-assinada, guardando o `ETag`. `afterAll`: `app.close()`.
 
 #### 1.1. conclui-upload-e-muda-para-processing
 
 **Covers AC:** #1, #2
 **Source:** auto
-**Last sync:** 2026-11-04T01:02:00Z
+**Last sync:** 2026-11-04T01:11:09Z
 
 **Steps:**
   1. POST /videos/{public_id}/upload/complete com o token do dono e body `{ "parts": [{ "part_number": 1, "etag": "<ETag>" }] }`
@@ -40,7 +40,7 @@ Conclui o upload multipart de um rascunho. A rota chama `CompleteMultipartUpload
 
 **Covers AC:** #3
 **Source:** auto
-**Last sync:** 2026-11-04T01:02:00Z
+**Last sync:** 2026-11-04T01:11:09Z
 
 **Steps:**
   1. POST /videos/{public_id}/upload/complete com `{ "parts": [{ "part_number": 1, "etag": "\"00000000000000000000000000000000\"" }] }`
@@ -52,7 +52,7 @@ Conclui o upload multipart de um rascunho. A rota chama `CompleteMultipartUpload
 
 **Covers AC:** #4
 **Source:** auto
-**Last sync:** 2026-11-04T01:02:00Z
+**Last sync:** 2026-11-04T01:11:09Z
 
 **Steps:**
   1. Criar outro rascunho com `size_bytes = 1048576` e enviar uma única parte com 524288 bytes, guardando o `ETag`
@@ -65,7 +65,7 @@ Conclui o upload multipart de um rascunho. A rota chama `CompleteMultipartUpload
 
 **Covers AC:** #5
 **Source:** auto
-**Last sync:** 2026-11-04T01:02:00Z
+**Last sync:** 2026-11-04T01:11:09Z
 
 **Steps:**
   1. Simular a indisponibilidade do Redis com `jest.spyOn(app.get(VideoProcessingQueue), 'enqueue').mockRejectedValueOnce(new Error('Connection is closed'))`; o comportamento com o Redis realmente parado é coberto pelo teste de integração de SI-03.7
@@ -80,7 +80,7 @@ Conclui o upload multipart de um rascunho. A rota chama `CompleteMultipartUpload
 
 **Covers AC:** #6
 **Source:** auto
-**Last sync:** 2026-11-04T01:02:00Z
+**Last sync:** 2026-11-04T01:11:09Z
 
 **Steps:**
   1. Concluir o upload com sucesso (`202`)
@@ -92,7 +92,7 @@ Conclui o upload multipart de um rascunho. A rota chama `CompleteMultipartUpload
 
 **Covers AC:** #7
 **Source:** auto
-**Last sync:** 2026-11-04T01:02:00Z
+**Last sync:** 2026-11-04T01:11:09Z
 
 **Steps:**
   1. POST /videos/{public_id}/upload/complete com `{ "parts": [] }`
@@ -103,7 +103,7 @@ Conclui o upload multipart de um rascunho. A rota chama `CompleteMultipartUpload
 
 **Covers AC:** #6
 **Source:** auto
-**Last sync:** 2026-11-04T01:02:00Z
+**Last sync:** 2026-11-04T01:11:09Z
 
 **Steps:**
   1. POST /videos/{public_id}/upload/complete com o token do outro usuário e a parte válida

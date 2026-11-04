@@ -16,13 +16,13 @@ Gerencia a sessão de upload multipart de um rascunho. `GET /videos/{public_id}/
 
 ### 1. Retomada do upload
 
-**Setup:** `beforeAll`: `AppModule` com a config global do `main.ts` (`ValidationPipe`, `DomainExceptionFilter`, `ValidationExceptionFilter`), bucket `streamtube-videos-test` e prefixo de fila `bull-test`. `beforeEach`: `cleanAllTables(dataSource)`, limpar o bucket de testes e o storage do throttler. Dois usuários confirmados e logados (dono e outro), via helper `registerConfirmAndLogin`. Rascunho criado com `POST /videos` pelo dono, com `size_bytes = 2 × 104857600 + 1024` (3 partes). `afterAll`: `app.close()`.
+**Setup:** `beforeAll`: `AppModule` com a config global do `main.ts` (`ValidationPipe`, `DomainExceptionFilter`, `ValidationExceptionFilter`), bucket `streamtube-videos-test`, `S3_PUBLIC_ENDPOINT=http://storage:9000` e prefixo de fila `bull-test` vindos de `src/test/setup-test-env.ts` (carregado em `setupFiles` antes do `dotenv/config`, per SI-03.1). `beforeEach`: `cleanAllTables(dataSource)`, limpar o bucket de testes e o storage do throttler. Dois usuários confirmados e logados (dono e outro), via helper `registerConfirmAndLogin`. Rascunho criado com `POST /videos` pelo dono, com `size_bytes = 2 × 104857600 + 1024` (3 partes). `afterAll`: `app.close()`.
 
 #### 1.1. retomada-lista-partes-enviadas-e-reassina-faltantes
 
 **Covers AC:** #1
 **Source:** auto
-**Last sync:** 2026-11-04T01:02:00Z
+**Last sync:** 2026-11-04T01:11:09Z
 
 **Steps:**
   1. PUT de 104857600 bytes em `upload.parts[0].url`, direto no storage
@@ -38,7 +38,7 @@ Gerencia a sessão de upload multipart de um rascunho. `GET /videos/{public_id}/
 
 **Covers AC:** #2
 **Source:** auto
-**Last sync:** 2026-11-04T01:02:00Z
+**Last sync:** 2026-11-04T01:11:09Z
 
 **Steps:**
   1. GET /videos/{public_id}/upload com o token do outro usuário
@@ -50,7 +50,7 @@ Gerencia a sessão de upload multipart de um rascunho. `GET /videos/{public_id}/
 
 **Covers AC:** #3
 **Source:** auto
-**Last sync:** 2026-11-04T01:02:00Z
+**Last sync:** 2026-11-04T01:11:09Z
 
 **Steps:**
   1. Atualizar o rascunho no banco para `status = 'processing'` e `upload_id = null`, simulando um upload já concluído
@@ -61,7 +61,7 @@ Gerencia a sessão de upload multipart de um rascunho. `GET /videos/{public_id}/
 
 **Covers AC:** #1
 **Source:** auto
-**Last sync:** 2026-11-04T01:02:00Z
+**Last sync:** 2026-11-04T01:11:09Z
 
 **Steps:**
   1. GET /videos/{public_id}/upload sem `Authorization`
@@ -75,7 +75,7 @@ Gerencia a sessão de upload multipart de um rascunho. `GET /videos/{public_id}/
 
 **Covers AC:** #4, #5
 **Source:** auto
-**Last sync:** 2026-11-04T01:02:00Z
+**Last sync:** 2026-11-04T01:11:09Z
 
 **Steps:**
   1. Guardar `upload.parts[1].url`, emitida no `POST /videos`
@@ -92,7 +92,7 @@ Gerencia a sessão de upload multipart de um rascunho. `GET /videos/{public_id}/
 
 **Covers AC:** #6
 **Source:** auto
-**Last sync:** 2026-11-04T01:02:00Z
+**Last sync:** 2026-11-04T01:11:09Z
 
 **Steps:**
   1. Atualizar o rascunho no banco para `status = 'ready'` e `upload_id = null`
@@ -104,7 +104,7 @@ Gerencia a sessão de upload multipart de um rascunho. `GET /videos/{public_id}/
 
 **Covers AC:** #4
 **Source:** auto
-**Last sync:** 2026-11-04T01:02:00Z
+**Last sync:** 2026-11-04T01:11:09Z
 
 **Steps:**
   1. DELETE /videos/{public_id}/upload com o token do outro usuário

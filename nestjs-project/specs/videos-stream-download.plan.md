@@ -16,13 +16,13 @@ Entrega ao dono URLs pré-assinadas do arquivo original de um vídeo `ready`, se
 
 ### 1. Vídeo ready do dono
 
-**Setup:** `beforeAll`: `AppModule` com a config global do `main.ts` (`ValidationPipe`, `DomainExceptionFilter`, `ValidationExceptionFilter`), bucket `streamtube-videos-test` e fila com prefixo `bull-test`. `beforeEach`: `cleanAllTables(dataSource)`, limpar o bucket de testes, a fila de testes e o storage do throttler. Dono e outro usuário confirmados e logados via `registerConfirmAndLogin`. Vídeo `ready` com `original_filename = "minha-aula.mp4"`: rascunho via `POST /videos`, fixture MP4 de `src/test/media-fixtures.helper.ts` (maior que 1 MiB) enviada como parte única, `POST .../upload/complete` e `VideoProcessor.process` executado in-process (per TD-16). `afterAll`: `app.close()`.
+**Setup:** `beforeAll`: `AppModule` com a config global do `main.ts` (`ValidationPipe`, `DomainExceptionFilter`, `ValidationExceptionFilter`), bucket `streamtube-videos-test`, `S3_PUBLIC_ENDPOINT=http://storage:9000` e prefixo de fila `bull-test` vindos de `src/test/setup-test-env.ts` (carregado em `setupFiles` antes do `dotenv/config`, per SI-03.1). `beforeEach`: `cleanAllTables(dataSource)`, limpar o bucket de testes, a fila de testes e o storage do throttler. Dono e outro usuário confirmados e logados via `registerConfirmAndLogin`. Vídeo `ready` com `original_filename = "minha-aula.mp4"`: rascunho via `POST /videos`, fixture MP4 de `src/test/media-fixtures.helper.ts` (maior que 1 MiB) enviada como parte única, `POST .../upload/complete` e `VideoProcessor.process` executado in-process (per TD-16). `afterAll`: `app.close()`.
 
 #### 1.1. stream-retorna-url-com-ttl-de-1h-e-suporta-range
 
 **Covers AC:** #1, #2, #6
 **Source:** auto
-**Last sync:** 2026-11-04T01:02:00Z
+**Last sync:** 2026-11-04T01:11:09Z
 
 **Steps:**
   1. GET /videos/{public_id}/stream com o token do dono
@@ -38,7 +38,7 @@ Entrega ao dono URLs pré-assinadas do arquivo original de um vídeo `ready`, se
 
 **Covers AC:** #3, #6
 **Source:** auto
-**Last sync:** 2026-11-04T01:02:00Z
+**Last sync:** 2026-11-04T01:11:09Z
 
 **Steps:**
   1. GET /videos/{public_id}/download com o token do dono
@@ -58,7 +58,7 @@ Entrega ao dono URLs pré-assinadas do arquivo original de um vídeo `ready`, se
 
 **Covers AC:** #4
 **Source:** auto
-**Last sync:** 2026-11-04T01:02:00Z
+**Last sync:** 2026-11-04T01:11:09Z
 
 **Steps:**
   1. Para cada status em `draft`, `processing` e `failed`, deixar o vídeo do dono nesse status
@@ -71,7 +71,7 @@ Entrega ao dono URLs pré-assinadas do arquivo original de um vídeo `ready`, se
 
 **Covers AC:** #5
 **Source:** auto
-**Last sync:** 2026-11-04T01:02:00Z
+**Last sync:** 2026-11-04T01:11:09Z
 
 **Steps:**
   1. GET /videos/{public_id}/stream do vídeo `ready` do dono, com o token do outro usuário
@@ -83,7 +83,7 @@ Entrega ao dono URLs pré-assinadas do arquivo original de um vídeo `ready`, se
 
 **Covers AC:** #5
 **Source:** auto
-**Last sync:** 2026-11-04T01:02:00Z
+**Last sync:** 2026-11-04T01:11:09Z
 
 **Steps:**
   1. GET /videos/{public_id}/stream e GET /videos/{public_id}/download sem `Authorization`

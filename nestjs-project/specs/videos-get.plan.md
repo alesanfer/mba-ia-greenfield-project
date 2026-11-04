@@ -16,13 +16,13 @@ Devolve ao dono o estado de um vídeo do próprio canal, em qualquer status (`dr
 
 ### 1. Leitura pelo dono
 
-**Setup:** `beforeAll`: `AppModule` com a config global do `main.ts` (`ValidationPipe`, `DomainExceptionFilter`, `ValidationExceptionFilter`), bucket `streamtube-videos-test` e fila com prefixo `bull-test`. `beforeEach`: `cleanAllTables(dataSource)`, limpar o bucket de testes, a fila de testes e o storage do throttler. Dono e outro usuário confirmados e logados via `registerConfirmAndLogin`. Para chegar a um vídeo `ready`, criar o rascunho com `POST /videos`, enviar como parte única uma fixture MP4 gerada por `src/test/media-fixtures.helper.ts`, concluir com `POST .../upload/complete` e executar `VideoProcessor.process` in-process, obtido de um `WorkerModule` de teste (per TD-16), com um job `{ data: { videoId } }`. `afterAll`: `app.close()`.
+**Setup:** `beforeAll`: `AppModule` com a config global do `main.ts` (`ValidationPipe`, `DomainExceptionFilter`, `ValidationExceptionFilter`), bucket `streamtube-videos-test`, `S3_PUBLIC_ENDPOINT=http://storage:9000` e prefixo de fila `bull-test` vindos de `src/test/setup-test-env.ts` (carregado em `setupFiles` antes do `dotenv/config`, per SI-03.1). `beforeEach`: `cleanAllTables(dataSource)`, limpar o bucket de testes, a fila de testes e o storage do throttler. Dono e outro usuário confirmados e logados via `registerConfirmAndLogin`. Para chegar a um vídeo `ready`, criar o rascunho com `POST /videos`, enviar como parte única uma fixture MP4 gerada por `src/test/media-fixtures.helper.ts`, concluir com `POST .../upload/complete` e executar `VideoProcessor.process` in-process, obtido de um `WorkerModule` de teste (per TD-16), com um job `{ data: { videoId } }`. `afterAll`: `app.close()`.
 
 #### 1.1. draft-retorna-200-com-metadados-nulos
 
 **Covers AC:** #1, #5
 **Source:** auto
-**Last sync:** 2026-11-04T01:02:00Z
+**Last sync:** 2026-11-04T01:11:09Z
 
 **Steps:**
   1. Criar um rascunho com `POST /videos` (`{ "filename": "aula.mp4", "mime_type": "video/mp4", "size_bytes": 1024 }`)
@@ -36,7 +36,7 @@ Devolve ao dono o estado de um vídeo do próprio canal, em qualquer status (`dr
 
 **Covers AC:** #2, #5
 **Source:** auto
-**Last sync:** 2026-11-04T01:02:00Z
+**Last sync:** 2026-11-04T01:11:09Z
 
 **Steps:**
   1. Levar um vídeo até `ready` pelo fluxo do Setup
@@ -52,7 +52,7 @@ Devolve ao dono o estado de um vídeo do próprio canal, em qualquer status (`dr
 
 **Covers AC:** #3
 **Source:** auto
-**Last sync:** 2026-11-04T01:02:00Z
+**Last sync:** 2026-11-04T01:11:09Z
 
 **Steps:**
   1. Criar um rascunho e atualizá-lo no banco para `status = 'failed'`, `upload_id = null` e `processing_error = 'NO_VIDEO_STREAM: no video stream found'`
@@ -68,7 +68,7 @@ Devolve ao dono o estado de um vídeo do próprio canal, em qualquer status (`dr
 
 **Covers AC:** #4
 **Source:** auto
-**Last sync:** 2026-11-04T01:02:00Z
+**Last sync:** 2026-11-04T01:11:09Z
 
 **Steps:**
   1. GET /videos/{public_id} com o token do outro usuário
@@ -80,7 +80,7 @@ Devolve ao dono o estado de um vídeo do próprio canal, em qualquer status (`dr
 
 **Covers AC:** #6
 **Source:** auto
-**Last sync:** 2026-11-04T01:02:00Z
+**Last sync:** 2026-11-04T01:11:09Z
 
 **Steps:**
   1. GET /videos/{public_id} sem `Authorization`

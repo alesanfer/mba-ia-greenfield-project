@@ -16,13 +16,13 @@ target_file: nestjs-project/test/videos-create.e2e-spec.ts
 
 ### 1. Pré-cadastro do rascunho
 
-**Setup:** `beforeAll`: `Test.createTestingModule({ imports: [AppModule] }).compile()` reproduzindo o `main.ts` (`ValidationPipe` com whitelist/forbidNonWhitelisted/transform, `DomainExceptionFilter` e `ValidationExceptionFilter`), com o bucket `streamtube-videos-test` (`src/test/storage-test.helper.ts`) e o prefixo de fila `bull-test` (`src/test/queue-test.helper.ts`). `beforeEach`: `cleanAllTables(dataSource)`, limpar os objetos do bucket de testes e o storage do throttler. Usuário confirmado com canal criado e logado via helper `registerConfirmAndLogin` (mesmo padrão de `test/auth.e2e-spec.ts`). `afterAll`: `app.close()`.
+**Setup:** `beforeAll`: `Test.createTestingModule({ imports: [AppModule] }).compile()` reproduzindo o `main.ts` (`ValidationPipe` com whitelist/forbidNonWhitelisted/transform, `DomainExceptionFilter` e `ValidationExceptionFilter`), com o bucket `streamtube-videos-test`, `S3_PUBLIC_ENDPOINT=http://storage:9000` e prefixo de fila `bull-test` vindos de `src/test/setup-test-env.ts` (carregado em `setupFiles` antes do `dotenv/config`, per SI-03.1). `beforeEach`: `cleanAllTables(dataSource)`, limpar os objetos do bucket de testes e o storage do throttler. Usuário confirmado com canal criado e logado via helper `registerConfirmAndLogin` (mesmo padrão de `test/auth.e2e-spec.ts`). `afterAll`: `app.close()`.
 
 #### 1.1. cria-draft-com-titulo-default-e-urls-de-parte
 
 **Covers AC:** #1, #3
 **Source:** auto
-**Last sync:** 2026-11-04T01:02:00Z
+**Last sync:** 2026-11-04T01:11:09Z
 
 **Steps:**
   1. POST /videos com `Authorization: Bearer <access_token>` e body `{ "filename": "aula.mp4", "mime_type": "video/mp4", "size_bytes": 262144000 }`
@@ -37,7 +37,7 @@ target_file: nestjs-project/test/videos-create.e2e-spec.ts
 
 **Covers AC:** #2
 **Source:** auto
-**Last sync:** 2026-11-04T01:02:00Z
+**Last sync:** 2026-11-04T01:11:09Z
 
 **Steps:**
   1. POST /videos autenticado com `{ "filename": "aula.webm", "mime_type": "video/webm", "size_bytes": 1048576, "title": "Introdução ao NestJS" }`
@@ -48,7 +48,7 @@ target_file: nestjs-project/test/videos-create.e2e-spec.ts
 
 **Covers AC:** #7
 **Source:** auto
-**Last sync:** 2026-11-04T01:02:00Z
+**Last sync:** 2026-11-04T01:11:09Z
 
 **Steps:**
   1. POST /videos autenticado com `{ "filename": "clip.mp4", "mime_type": "video/mp4", "size_bytes": 1024 }`
@@ -66,7 +66,7 @@ target_file: nestjs-project/test/videos-create.e2e-spec.ts
 
 **Covers AC:** #4
 **Source:** auto
-**Last sync:** 2026-11-04T01:02:00Z
+**Last sync:** 2026-11-04T01:11:09Z
 
 **Steps:**
   1. POST /videos autenticado com `{ "filename": "aula.mkv", "mime_type": "video/x-matroska", "size_bytes": 1024 }`
@@ -77,7 +77,7 @@ target_file: nestjs-project/test/videos-create.e2e-spec.ts
 
 **Covers AC:** #5
 **Source:** auto
-**Last sync:** 2026-11-04T01:02:00Z
+**Last sync:** 2026-11-04T01:11:09Z
 
 **Steps:**
   1. POST /videos autenticado com `{ "filename": "big.mp4", "mime_type": "video/mp4", "size_bytes": 10737418241 }`
@@ -88,7 +88,7 @@ target_file: nestjs-project/test/videos-create.e2e-spec.ts
 
 **Covers AC:** #6
 **Source:** auto
-**Last sync:** 2026-11-04T01:02:00Z
+**Last sync:** 2026-11-04T01:11:09Z
 
 **Steps:**
   1. POST /videos sem header `Authorization`, com body válido
